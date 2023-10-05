@@ -10,7 +10,7 @@ const app = express()
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect('mongodb+srv://deepanshugupta899:ZxEBEU2tZW5sI9BF@cluster0.ki6bgeh.mongodb.net/todoApp',{
+mongoose.connect('USE_YOUR_MONGO_URL_HERE',{
     useNewUrlParser: true,
     useUnifiedTopology: true
 }).then(()=>{
