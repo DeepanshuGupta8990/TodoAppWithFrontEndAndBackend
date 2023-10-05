@@ -1,0 +1,20 @@
+# Ignore Node.js modules for the backend
+/TodoAppBackendAtOnGraph/node_modules
+
+# Ignore build and bundled files for the frontend
+/TodoAppAtOnGraph/build
+/TodoAppAtOnGraph/dist
+
+# Ignore Node.js modules for the frontend
+/TodoAppAtOnGraph/node_modules
+
+# Ignore environment-specific files
+.env
+
+# Ignore any logs or generated files
+*.log
+*.pid
+
+# Ignore any OS-generated files
+.DS_Store
+Thumbs.db
