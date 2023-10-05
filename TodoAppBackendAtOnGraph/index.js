@@ -61,11 +61,12 @@ app.post('/signup',async(req,res)=>{
 })
 
 app.post('/add',middleware,async(req,res)=>{
-    const {todoArray} = req.body;
+    const {todoArray,email} = req.body;
     const userInfo = req.customData 
     const result = await User.updateOne({_id:userInfo._id},{$set:{todosArray:todoArray}})
+    const updatedArray = await User.findOne({email:email});
     console.log(result)
-    res.json({status:201,msg:"Todo add succesfully"})
+    res.json({status:201,msg:"Todo add succesfully",todosArray:updatedArray.todosArray})
 })
 
 app.post("/getTodos",middleware,async(req,res)=>{
@@ -73,7 +74,7 @@ app.post("/getTodos",middleware,async(req,res)=>{
     const userInfo = req.customData;
     const todoArray = userInfo.todosArray  
     console.log(todoArray)
-    res.json({todosArray:todoArray,status:200,ll:4343});
+    res.json({todosArray:todoArray,status:200});
 })
 app.post("/deleteTodo",middleware,async(req,res)=>{
     console.log('request arrived')
@@ -88,11 +89,12 @@ app.post("/deleteTodo",middleware,async(req,res)=>{
 })
 app.post("/updateTodo",middleware,async(req,res)=>{
     console.log('request arrived')
-    const {todoArray} = req.body;
+    const {todoArray,email} = req.body;
     const userInfo = req.customData 
     const result = await User.updateOne({_id:userInfo._id},{$set:{todosArray:todoArray}})
+    const updatedArray = await User.findOne({email:email});
     if(result.acknowledged){
-        res.json({msg:'Todo deleted succesfully',status:200});
+        res.json({msg:'Todo deleted succesfully',status:200,todosArray:updatedArray.todosArray});
     }else{
         res.json({msg:'Todo upgradation failed',status:401});
     }
