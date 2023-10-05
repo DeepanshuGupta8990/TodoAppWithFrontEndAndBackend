@@ -48,6 +48,10 @@ export default function Login() {
             console.log(data)
             if(data.status===201){
               toast.success("User verified succesfully",toastOptions)
+              localStorage.setItem("OnGraphTodoApp",JSON.stringify({username,email,password}));
+              setTimeout(()=>{
+                navigate('/')
+              },1000)
             } 
             else{
               toast.error(data.msg,toastOptions)

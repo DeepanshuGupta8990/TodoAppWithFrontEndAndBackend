@@ -16,46 +16,44 @@ export default function Home() {
   const [animationDelay,setAnimationDelay] = useState(true);
   const [loadingAniamtion,setLoadingAnimation] = useState(false)
   const todoListRef = useRef(null) 
-  const scrollBarToBottom = useRef(false)
+  // const scrollBarToBottom = useRef(false)
   let userInfo;
 
     try {
       const userInfoUnparresed =localStorage.getItem("OnGraphTodoApp");
-      // console.log(userInfoUnparresed)
-      // console.log(1)
       if(userInfoUnparresed){
-        // console.log(2)
         userInfo = JSON.parse(userInfoUnparresed)
       }else{
-          // console.log(3)
         navigate("/login")
       }
-      
     } catch (error) {
       console.log(error.message)
     }
 
 
+
   async function updateTodosFunc(){
-     try {
-      setLoadingAnimation(true)
+     try { 
       setUpdateButtonActive(false);
       setTodoId(null);
+      setLoadingAnimation(true)
       const updateRequiredTodo = todoArray.find((todo)=>{
-       return todo.id === todoId
+       return todo.todoid === todoId
       })
       const oneMinusTodoArray = todoArray.filter((todo)=>{
-       return todo.id!==todoId
-      })
+       return todo.todoid!==todoId
+      }) 
       const todoArray2 = [...oneMinusTodoArray,{...updateRequiredTodo,todo:todo}]
-      const currentDate = new Date();
-      const sortedTodoArray = todoArray2.sort((a, b) => {
-       const timeDifferenceA = Math.abs(currentDate - a.date);
-       const timeDifferenceB = Math.abs(currentDate - b.date);
-       return timeDifferenceB - timeDifferenceA;
-     });
-     const data = await axios.post('http://localhost:4500/updateTodo',{todoArray:sortedTodoArray,email:userInfo.email,password:userInfo.password,});
+     const data = await axios.post('http://localhost:4500/updateTodo',{todoArray:todoArray2,email:userInfo.email,password:userInfo.password,});
      if(data.data.status === 200){
+      const currentDate = new Date();
+      const sortedTodoArray = data.data.todosArray.sort((a, b) => {
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        const timeDifferenceA = Math.abs(currentDate - dateA);
+        const timeDifferenceB = Math.abs(currentDate - dateB);
+        return timeDifferenceA - timeDifferenceB; // To sort in ascending order
+      });
        setTodoArray(sortedTodoArray);
        setTodo('');
       }else{
@@ -64,7 +62,9 @@ export default function Home() {
      } catch (error) {
        console.log(error.message)
      }finally{
-      setLoadingAnimation(false)
+      setTimeout(()=>{
+        setLoadingAnimation(false);
+      },400)
      }
   }
   async function keyDownFunc(e){
@@ -72,25 +72,37 @@ export default function Home() {
       if(e.key === "Enter" || e.keyCode === 13){
         if(todo!=='' && updateButtonActive===false){
           setLoadingAnimation(true)
+          setUpdateButtonActive(false);
           const newTodoArray = [
             ...todoArray,
-            {todo:todo,id:uniqueId,date:new Date()}
+            {todo:todo,todoid:uniqueId,date:new Date()}
           ]
           const {data} = await axios.post("http://localhost:4500/add",{todoArray:newTodoArray,email:userInfo.email,password:userInfo.password})
           if(data.status === 201){
-            setTodoArray(newTodoArray)
+            const currentDate = new Date();
+            const sortedTodoArray = data.todosArray.sort((a, b) => {
+              const dateA = new Date(a.date);
+              const dateB = new Date(b.date);
+              const timeDifferenceA = Math.abs(currentDate - dateA);
+              const timeDifferenceB = Math.abs(currentDate - dateB);
+              return timeDifferenceA - timeDifferenceB; // To sort in ascending order
+            });
+            setTodoArray(sortedTodoArray)
             setTodo('');
-            scrollBarToBottom.current = true;
+            // scrollBarToBottom.current = true;
           }
       
         }else if(todo!=='' && updateButtonActive===true){
+          setLoadingAnimation(true)
           updateTodosFunc();
         }
        }
     } catch (error) {
       console.log(error.message)
     }finally{
-      setLoadingAnimation(false);
+      setTimeout(()=>{
+        setLoadingAnimation(false);
+      },400)
     }
   }
   async function cancelFunc(){
@@ -101,37 +113,53 @@ export default function Home() {
   async function addTodoFunc(){
     try {
       if(todo.length>1){
+        setUpdateButtonActive(false);
         setLoadingAnimation(true)
         const newTodoArray = [
           ...todoArray,
-          {todo:todo,id:uniqueId ,date:new Date()}
+          {todo:todo,todoid:uniqueId ,date:new Date()}
         ]    
         const {data} = await axios.post("http://localhost:4500/add",{todoArray:newTodoArray,email:userInfo.email,password:userInfo.password})
         if(data.status === 201){
-          setTodoArray(newTodoArray)
+          const currentDate = new Date();
+          const sortedTodoArray = data.todosArray.sort((a, b) => {
+            const dateA = new Date(a.date);
+            const dateB = new Date(b.date);
+            const timeDifferenceA = Math.abs(currentDate - dateA);
+            const timeDifferenceB = Math.abs(currentDate - dateB);
+            return timeDifferenceB - timeDifferenceA; // To sort in ascending order
+          });
+          setTodoArray(sortedTodoArray)
           setTodo('');
-          scrollBarToBottom.current = true;
+          // scrollBarToBottom.current = true;
         }
     
        }
     } catch (error) {
       console.log(error.message)
     }finally{
-      setLoadingAnimation(false)
+      setTimeout(()=>{
+        setLoadingAnimation(false)
+      },400)
 
     }
   }
   function updateFunc(todoElement){
     setTodo(todoElement.todo)
     setUpdateButtonActive(true);
-    setTodoId(todoElement.id)
+    setTodoId(todoElement.todoid)
     inputRef.current.focus();
   }
   async function removeFunc(todoElement){
     try {
+      if(todoElement.todoid===todoId){
+        setUpdateButtonActive(false);
+        setTodo('');
+      }
+      setTodoId(null)
       setLoadingAnimation(true)
       const newTodoArray = todoArray.filter((todo)=>{
-        return todo.id !== todoElement.id
+        return todo.todoid !== todoElement.todoid
       })
       const {data} = await axios.post('http://localhost:4500/deleteTodo',{todoArray:newTodoArray,email:userInfo.email,password:userInfo.password,});
       if(data.status===200){
@@ -152,7 +180,16 @@ export default function Home() {
         const data = await axios.post('http://localhost:4500/getTodos',{email:userInfo?.email,password:userInfo?.password});
         // console.log(data);
         if(data.data.todosArray){
-          setTodoArray(data.data.todosArray)
+          const currentDate = new Date();
+          const sortedTodoArray = data.data.todosArray.sort((a, b) => {
+            const dateA = new Date(a.date);
+            const dateB = new Date(b.date);
+            const timeDifferenceA = Math.abs(currentDate - dateA);
+            const timeDifferenceB = Math.abs(currentDate - dateB);
+            return timeDifferenceA - timeDifferenceB; // To sort in ascending order
+          });
+          setTodoArray(sortedTodoArray)
+          console.log(data.data.todosArray)
           setTimeout(()=>{
               setAnimationDelay(false)
           },1000)
@@ -166,12 +203,12 @@ export default function Home() {
     }
   },[])
 
-  useEffect(()=>{
-    if (todoListRef.current && scrollBarToBottom.current) {
-      todoListRef.current.scrollTop = todoListRef.current.scrollHeight;
-      scrollBarToBottom.current = false;
-    }
-  },[todoArray])
+  // useEffect(()=>{
+  //   if (todoListRef.current && scrollBarToBottom.current) {
+  //     todoListRef.current.scrollTop = todoListRef.current.scrollHeight;
+  //     scrollBarToBottom.current = false;
+  //   }
+  // },[todoArray])
 
   return (
     <Container>
@@ -194,11 +231,11 @@ export default function Home() {
            {
             todoArray.map((todoElement,index)=>{
                return(
-                <div  key={todoElement.id} className={`${todoElement.id===todoId?"updateAskingTodo":""} todoElement`} style={{animationDelay:`${animationDelay ? index*0.1 : 0}s`}}>
+                <div  key={todoElement.todoid} className={`${todoElement.todoid===todoId?"updateAskingTodo":""} todoElement`} style={{animationDelay:`${animationDelay ? index*0.1 : 0}s`}}>
                    <p>{todoElement.todo}</p>
                    <button onClick={()=>{removeFunc(todoElement)}}>Remove</button>
                {
-                todoElement.id === todoId ? (<button onClick={cancelFunc}>Cancel</button>) : (<button onClick={()=>{updateFunc(todoElement)}}>Update</button>)
+                todoElement.todoid === todoId ? (<button onClick={cancelFunc}>Cancel</button>) : (<button onClick={()=>{updateFunc(todoElement)}}>Update</button>)
                }
                 </div>
                )
