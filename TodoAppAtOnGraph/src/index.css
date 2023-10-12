@@ -11,3 +11,16 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.custom-skeleton1 {
+  border-radius: 8px; /* Set the desired border radius value */
+  width: 30%;
+}
+.custom-skeleton2 {
+  border-radius: 8px; /* Set the desired border radius value */
+  width: 15%;
+}
+.custom-skeleton3 {
+  border-radius: 8px; /* Set the desired border radius value */
+  width: 15%;
+}

@@ -28,9 +28,20 @@ const newUserSchema = mongoose.Schema({
         date: {
             type: Date,
             default: Date.now
+        },
+        update:{
+            type:Boolean,
+            default:false,
+        },
+        updatedAt:{
+            type:Date
+        },
+        lastTodo:{
+            type:String
         }
      }
-    ]
+    ],
+  
      
 })
 

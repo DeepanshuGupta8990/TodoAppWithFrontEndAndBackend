@@ -1,12 +1,13 @@
 import React from 'react'
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { Link, json } from 'react-router-dom';
 import styled from 'styled-components';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import LoadingImage from '../image/loading.gif'
+import { useAuth0 } from "@auth0/auth0-react";
 
 const FormContainer = styled.div`
 height: 100vh;
@@ -17,6 +18,7 @@ justify-content: center;
 align-items: center;
 gap: 1rem;
 background-color: #131324;
+overflow: hidden;
 .brand{
   display: flex;
   align-items: center;
@@ -50,6 +52,9 @@ form{
     &:focus{
       border: 0.1rem solid #997af0;
       outline: none;
+    }
+    @media only screen and (max-width: 600px) {
+      width: 70%;
     }
   }
   button{
@@ -95,6 +100,7 @@ form{
 
 export default function Singup() {
   const [disableVal,setDisableVal] = useState(false);
+  const [disableAuth,setDisableAuth] = useState(false);
   const navigate = useNavigate();
   const [values, setValues] = useState({
     username: "",
@@ -102,7 +108,9 @@ export default function Singup() {
     password: '',
     confirmPassword: ""
   })
-  const toastOptions = {
+  const { user,loginWithRedirect } = useAuth0();
+
+   const toastOptions = {
     position: "top-right",
     autoClose: "8000",
     pauseOnHover: true,
@@ -110,6 +118,75 @@ export default function Singup() {
     theme: 'dark',
   }
 
+  let userInfo;
+  async function createUserFunction(valuess,entry=false){
+    const { password, confirmPassword, username, email } = valuess;
+    const {data} = await axios.post('http://localhost:4500/signup',{
+      username,
+      email,
+      password
+    })
+    if(data.status!==201){
+     if(entry){
+       const message = data.msg
+       return message;
+     }else{
+      toast.error(data.msg,toastOptions)
+     }
+    }
+    if(data.status===201){
+      toast.success("User Created Succesfully",toastOptions)
+      localStorage.setItem("OnGraphTodoApp",JSON.stringify({username,email,password}))
+      setTimeout(()=>{
+        navigate('/home',{replace:true})
+      },0)
+    }
+  }
+
+  async function isUserRegistered(entry=false){
+    const userInfoUnparsed = localStorage.getItem("OnGraphTodoApp");
+    if (userInfoUnparsed) {
+       userInfo = JSON.parse(userInfoUnparsed);
+      navigate('/home', { replace: true });
+      // Consider displaying a user-friendly message instead of an alert.
+    } else {
+      if (user && user.email) {
+        const passValues = {
+          username: user.given_name + " " + user.family_name,
+          email: user.email,
+          password: 'abcdefg123456@123',
+        };
+        let message;
+
+        async function func1() {
+          message = await createUserFunction(passValues, true);
+
+          if (true) {
+            localStorage.setItem("OnGraphTodoApp", JSON.stringify(passValues));
+            navigate('/home');
+          } else {
+            toast.error(message,toastOptions);
+          }
+        }
+
+        func1();
+      } else {
+        // loginWithRedirect({ redirectUri: 'http://localhost:3000/home' });
+       if(entry){
+        loginWithRedirect()
+       }
+      }
+    }
+  }
+console.log(user,'user')
+  async function auth0Func() {
+    try {
+      isUserRegistered(true)
+    } catch (error) {
+      console.error(error.message);
+      // Handle the error in an appropriate manner.
+    }
+  }
 
   const handleValidation = () => {
     const { password, confirmPassword, username, email } = values;
@@ -130,26 +207,12 @@ export default function Singup() {
     }
     return true;
   }
+
   const handleSubmit = async (event) => {
    try {
     event.preventDefault();
     if (handleValidation()) {
-      const { password, confirmPassword, username, email } = values;
-      const {data} = await axios.post('http://localhost:4500/signup',{
-        username,
-        email,
-        password
-      })
-      if(data.status!==201){
-        toast.error(data.msg,toastOptions)
-      }
-      if(data.status===201){
-        toast.success("User Created Succesfully",toastOptions)
-        localStorage.setItem("OnGraphTodoApp",JSON.stringify({username,email,password}))
-        setTimeout(()=>{
-          navigate('/')
-        },1000)
-      }
+      createUserFunction(values);
     }
    } catch (error) {
     toast.error(error.message,toastOptions)
@@ -166,10 +229,19 @@ export default function Singup() {
     })
   }
 
+  useEffect(()=>{
+    const userInfoUnparsed = localStorage.getItem("OnGraphTodoApp");
+    if (userInfoUnparsed) {
+       userInfo = JSON.parse(userInfoUnparsed);
+      navigate('/home', { replace: true });
+      // Consider displaying a user-friendly message instead of an alert.
+    }
+      isUserRegistered();
+  },[user])
   return (
     <>
       <FormContainer>
-        <form onSubmit={(event) => { handleSubmit(event) }}>
+        <form>
           <div className='brand'>
             <h1>Todo App</h1>
           </div>
@@ -177,9 +249,18 @@ export default function Singup() {
           <input type="email" placeholder='Email' name='email' onChange={(e) => { handleChange(e) }} />
           <input type="password" placeholder='Password' name='password' onChange={(e) => { handleChange(e) }} />
           <input type="password" placeholder='Confirm Passwprd' name='confirmPassword' onChange={(e) => { handleChange(e) }} />
-          <button type='submit' disabled={disableVal}>{
+          <div style={{display:'flex',flexDirection:"row",gap:'1rem'}}>
+          <button type='submit' disabled={disableVal} onClick={(event) => { handleSubmit(event) }}>{
             disableVal ? <img src={LoadingImage} alt="ddsd" height={14.5}/> : 'Register'
           }</button>
+          <button onClick={(e)=>{
+            e.preventDefault()
+            setDisableAuth(true)
+            auth0Func()
+            }}>{
+              disableAuth ? <img src={LoadingImage} alt="ddsd" height={14.5}/> : 'Auth0'
+            }</button>
+          </div>
           <span>
             Already have an account ? <Link to='/login'>Login</Link>
           </span>

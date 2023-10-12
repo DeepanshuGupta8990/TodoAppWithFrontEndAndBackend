@@ -6,8 +6,10 @@ import { useNavigate } from 'react-router-dom';
 import {styled} from 'styled-components';
 import axios from 'axios';
 import LoadingImage from '../image/loading.gif'
+import { useAuth0 } from "@auth0/auth0-react";
 
 export default function Login() {
+  const { user } = useAuth0();
   const navigate = useNavigate();
   const [disableVal,setDisableVal] = useState(false);
   const [values, setValues] = useState({
@@ -15,6 +17,7 @@ export default function Login() {
     email: "",
     password: '',
   })
+  console.log(user,'sdsdsdasdsa')
   const toastOptions = {
     position: "top-right",
     autoClose: "8000",
@@ -50,7 +53,7 @@ export default function Login() {
               toast.success("User verified succesfully",toastOptions)
               localStorage.setItem("OnGraphTodoApp",JSON.stringify({username,email,password}));
               setTimeout(()=>{
-                navigate('/')
+                navigate('/home',{replace:true})
               },1000)
             } 
             else{
@@ -87,7 +90,7 @@ export default function Login() {
             disableVal ? <img src={LoadingImage} alt="ddsd" height={14.5}/> : 'Login'
           }</button>
           <span>
-            Don't have any account ? <Link to='/signup'>Register</Link>
+            Don't have any account ? <Link to='/'>Register</Link>
           </span>
 
         </form>
@@ -107,6 +110,7 @@ justify-content: center;
 align-items: center;
 gap: 1rem;
 background-color: #131324;
+overflow: hidden;
 .brand{
   display: flex;
   align-items: center;
@@ -128,6 +132,9 @@ form{
   background-color: #00000076;
   border-radius: 2rem;
   padding: 3rem 5rem;
+  @media only screen and (max-width: 600px) {
+      width: 7%;
+    }
   input{
     background-color: transparent;
     padding: 1rem;
@@ -140,6 +147,9 @@ form{
     &:focus{
       border: 0.1rem solid #997af0;
       outline: none;
+    }
+    @media only screen and (max-width: 600px) {
+      width: 70%;
     }
   }
   button{

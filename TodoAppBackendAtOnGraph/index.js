@@ -25,8 +25,9 @@ app.get("/",(req,res)=>{
     res.send("sdsadsa")
 })
 app.post('/login',async(req,res)=>{
+    // console.log('login request arrived')
     const { email, password} = await req.body
-    const checkUser = await User.findOne({email:email})
+    const checkUser = await User.findOne({email:email.toLowerCase()})
     if(checkUser){
         const isPasswordCorrect = await bcrypt.compare(password, checkUser.password);
         if(isPasswordCorrect){
@@ -35,24 +36,25 @@ app.post('/login',async(req,res)=>{
             res.json({status:401,msg:"Email or password are incorrect"})
         }
     }else{
-        res.json({status:401})
+        res.json({status:401,msg:"Email or password are incorrect"})
     }
 })
 app.post('/signup',async(req,res)=>{
+    // console.log('signup request arrived')
     try{
         const {username, email, password} = await req.body
-        console.log(username,password,email)
-        const checkUser = await User.findOne({email:email})
+        // console.log(username,password,email);
+        const checkUser = await User.findOne({email:email.toLowerCase()})
         if(checkUser){
             res.json({status:401,msg:"User already exist"})
         }else{
             const hashedPassword = await bcrypt.hash(password,10);
             const newUserCreated =  await User.create({
                 username,
-                email,
+                email:email.toLowerCase(),
                 password:hashedPassword,
                })
-               console.log(newUserCreated)
+            //    console.log(newUserCreated)
             res.json({status:201,msg:"User created succesfully"})
         }
     }catch(err){
@@ -64,20 +66,20 @@ app.post('/add',middleware,async(req,res)=>{
     const {todoArray,email} = req.body;
     const userInfo = req.customData 
     const result = await User.updateOne({_id:userInfo._id},{$set:{todosArray:todoArray}})
-    const updatedArray = await User.findOne({email:email});
-    console.log(result)
+    const updatedArray = await User.findOne({email:email.toLowerCase()});
+    // console.log(result)
     res.json({status:201,msg:"Todo add succesfully",todosArray:updatedArray.todosArray})
 })
 
 app.post("/getTodos",middleware,async(req,res)=>{
-    console.log('request arrived')
+    // console.log('request arrived')
     const userInfo = req.customData;
-    const todoArray = userInfo.todosArray  
-    console.log(todoArray)
+    const todoArray = userInfo.todosArray
+    // console.log(todoArray)
     res.json({todosArray:todoArray,status:200});
 })
 app.post("/deleteTodo",middleware,async(req,res)=>{
-    console.log('request arrived')
+    // console.log('request arrived')
     const {todoArray} = req.body;
     const userInfo = req.customData 
     const result = await User.updateOne({_id:userInfo._id},{$set:{todosArray:todoArray}})
@@ -88,11 +90,11 @@ app.post("/deleteTodo",middleware,async(req,res)=>{
     }
 })
 app.post("/updateTodo",middleware,async(req,res)=>{
-    console.log('request arrived')
+    // console.log('request arrived')
     const {todoArray,email} = req.body;
     const userInfo = req.customData 
     const result = await User.updateOne({_id:userInfo._id},{$set:{todosArray:todoArray}})
-    const updatedArray = await User.findOne({email:email});
+    const updatedArray = await User.findOne({email:email.toLowerCase()});
     if(result.acknowledged){
         res.json({msg:'Todo deleted succesfully',status:200,todosArray:updatedArray.todosArray});
     }else{
