@@ -41,7 +41,7 @@ const newUserSchema = mongoose.Schema({
         }
      }
     ],
-  
+    
      
 })
 

@@ -4,7 +4,7 @@ const bcrypt = require("bcrypt");
 
 const middleware = async(req,res,next)=>{
     const { email, password} = await req.body
-    console.log(password,'password')
+    // console.log(password,'password')
     const checkUser = await User.findOne({email:email.toLowerCase()})
     if(checkUser){
         const isPasswordCorrect = await bcrypt.compare(password, checkUser.password);

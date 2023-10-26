@@ -19,6 +19,19 @@ align-items: center;
 gap: 1rem;
 background-color: #131324;
 overflow: hidden;
+#loadingdiv {
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    background-color: white;
+    opacity: 0.2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    img {
+      opacity: 1;
+    }
+  }
 .brand{
   display: flex;
   align-items: center;
@@ -102,6 +115,7 @@ export default function Singup() {
   const [disableVal,setDisableVal] = useState(false);
   const [disableAuth,setDisableAuth] = useState(false);
   const navigate = useNavigate();
+  const [loadingAniamtion,setLoadingAnimation] = useState(true)
   const [values, setValues] = useState({
     username: "",
     email: "",
@@ -121,7 +135,7 @@ export default function Singup() {
   let userInfo;
   async function createUserFunction(valuess,entry=false){
     const { password, confirmPassword, username, email } = valuess;
-    const {data} = await axios.post('http://localhost:4500/signup',{
+    const {data} = await axios.post('https://websocketchatapp.tanujagupta.repl.co/signup',{
       username,
       email,
       password
@@ -137,6 +151,7 @@ export default function Singup() {
     if(data.status===201){
       toast.success("User Created Succesfully",toastOptions)
       localStorage.setItem("OnGraphTodoApp",JSON.stringify({username,email,password}))
+      // setLoadingAnimation(false)
       setTimeout(()=>{
         navigate('/home',{replace:true})
       },0)
@@ -152,7 +167,7 @@ export default function Singup() {
     } else {
       if (user && user.email) {
         const passValues = {
-          username: user.given_name + " " + user.family_name,
+          username: user.name,
           email: user.email,
           password: 'abcdefg123456@123',
         };
@@ -175,6 +190,7 @@ export default function Singup() {
        if(entry){
         loginWithRedirect()
        }
+       setLoadingAnimation(false)
       }
     }
   }
@@ -241,6 +257,11 @@ console.log(user,'user')
   return (
     <>
       <FormContainer>
+        {loadingAniamtion && (
+        <div id="loadingdiv">
+          <img src={LoadingImage} alt="ddsd" height={34.5} />
+        </div>
+      )}
         <form>
           <div className='brand'>
             <h1>Todo App</h1>

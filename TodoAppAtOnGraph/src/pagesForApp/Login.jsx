@@ -43,7 +43,7 @@ export default function Login() {
             const { password, username, email } = values;
             console.log(password,email)
             setDisableVal(true);
-            const {data} = await axios.post('http://localhost:4500/login',{
+            const {data} = await axios.post('https://websocketchatapp.tanujagupta.repl.co/login',{
               username:username,
               email:email,
               password:password

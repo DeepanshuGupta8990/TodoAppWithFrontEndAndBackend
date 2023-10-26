@@ -1,6 +1,6 @@
 import axios from "axios";
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { v4 as uuidv4 } from "uuid";
 import LoadingImage from "../image/loading.gif";
@@ -22,15 +22,12 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
-import Divider from "@mui/material/Divider";
 import Paper from "@mui/material/Paper";
 import MenuList from "@mui/material/MenuList";
 import MenuItem from "@mui/material/MenuItem";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemIcon from "@mui/material/ListItemIcon";
-import ContentCut from "@mui/icons-material/ContentCut";
 import ContentCopy from "@mui/icons-material/ContentCopy";
-import ContentPaste from "@mui/icons-material/ContentPaste";
 import UndoIcon from "@mui/icons-material/Undo";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useAuth0 } from "@auth0/auth0-react";
@@ -115,7 +112,7 @@ export default function Home() {
           lastTodo: lastTodo,
         },
       ];
-      const data = await axios.post("http://localhost:4500/updateTodo", {
+      const data = await axios.post("https://websocketchatapp.tanujagupta.repl.co/updateTodo", {
         todoArray: todoArray2,
         email: userInfo.email,
         password: userInfo.password,
@@ -166,7 +163,7 @@ export default function Home() {
           lastTodo:undefined
         },
       ];
-      const data = await axios.post("http://localhost:4500/updateTodo", {
+      const data = await axios.post("https://websocketchatapp.tanujagupta.repl.co/updateTodo", {
         todoArray: todoArray2,
         email: userInfo.email,
         password: userInfo.password,
@@ -204,7 +201,7 @@ export default function Home() {
             ...todoArray,
             { todo: todo, todoid: uniqueId, date: new Date() },
           ];
-          // const { data } = await axios.post("http://localhost:4500/add", {
+          // const { data } = await axios.post("https://websocketchatapp.tanujagupta.repl.co/add", {
           //   todoArray: newTodoArray,
           //   email: userInfo.email,
           //   password: userInfo.password,
@@ -255,7 +252,7 @@ export default function Home() {
           ...todoArray,
           { todo: todo, todoid: uniqueId, date: new Date() },
         ];
-        // const { data } = await axios.post("http://localhost:4500/add", {
+        // const { data } = await axios.post("https://websocketchatapp.tanujagupta.repl.co/add", {
         //   todoArray: newTodoArray,
         //   email: userInfo.email,
         //   password: userInfo.password,
@@ -306,7 +303,7 @@ export default function Home() {
       const newTodoArray = todoArray.filter((todo) => {
         return todo.todoid !== todoElement.todoid;
       });
-      const { data } = await axios.post("http://localhost:4500/deleteTodo", {
+      const { data } = await axios.post("https://websocketchatapp.tanujagupta.repl.co/deleteTodo", {
         todoArray: newTodoArray,
         email: userInfo.email,
         password: userInfo.password,
@@ -354,7 +351,7 @@ export default function Home() {
     try {
       async function func() {
         // inputRef.current.focus();
-        // const data = await axios.post("http://localhost:4500/getTodos", {
+        // const data = await axios.post("https://websocketchatapp.tanujagupta.repl.co/getTodos", {
         //   email: userInfo?.email,
         //   password: userInfo?.password,
         // });
@@ -403,9 +400,15 @@ export default function Home() {
   //     scrollBarToBottom.current = false;
   //   }
   // },[todoArray])
-
+  console.log(userInfo,'userinfo')
   return (
     <Container>
+      <div id="chatsLink">
+        <Link to='/chat'>Go to chats1</Link>
+      </div>
+      <div id="chatsLink2">
+        <Link to='/socketChatApp'>Go to chats2</Link>
+      </div>
       {loadingAniamtion && (
         <div id="loadingdiv">
           <img src={LoadingImage} alt="ddsd" height={34.5} />
@@ -538,6 +541,18 @@ const Container = styled.div`
   gap: 1rem;
   background-color: #131324;
   margin: 0;
+  #chatsLink{
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 20px;
+  }
+  #chatsLink2{
+    position: absolute;
+    top: 10px;
+    left: 150px;
+    font-size: 20px;
+  }
   #logout {
     padding: 5px;
     background-color: #997af0;
@@ -621,6 +636,8 @@ const Container = styled.div`
     flex-direction: column;
     align-items: center;
     overflow: auto;
+    gap: 1rem;
+    padding-top: 1rem;
     @media only screen and (max-width: 1200px) {
       width: 80%;
       gap: 0.8rem;
