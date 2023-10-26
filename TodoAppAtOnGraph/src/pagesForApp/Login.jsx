@@ -54,6 +54,7 @@ export default function Login() {
               localStorage.setItem("OnGraphTodoApp",JSON.stringify({username,email,password}));
               setTimeout(()=>{
                 navigate('/home',{replace:true})
+
               },1000)
             } 
             else{
