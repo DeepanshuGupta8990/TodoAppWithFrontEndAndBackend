@@ -2,9 +2,10 @@ const express = require("express");
 const cors = require('cors');
 const mongoose = require("mongoose");
 const User = require("./models/userModel.js");
+const MessageUser = require("./models/messages.js");
 const bcrypt = require("bcrypt");
 const middleware = require("./helper/middleware.js"); 
-
+const socket = require("socket.io");
 
 const app = express()
 app.use(cors());
@@ -25,8 +26,9 @@ app.get("/",(req,res)=>{
     res.send("sdsadsa")
 })
 app.post('/login',async(req,res)=>{
+    // console.log('login request arrived')
     const { email, password} = await req.body
-    const checkUser = await User.findOne({email:email})
+    const checkUser = await User.findOne({email:email.toLowerCase()})
     if(checkUser){
         const isPasswordCorrect = await bcrypt.compare(password, checkUser.password);
         if(isPasswordCorrect){
@@ -35,24 +37,29 @@ app.post('/login',async(req,res)=>{
             res.json({status:401,msg:"Email or password are incorrect"})
         }
     }else{
-        res.json({status:401})
+        res.json({status:401,msg:"Email or password are incorrect"})
     }
 })
 app.post('/signup',async(req,res)=>{
+    // console.log('signup request arrived')
     try{
         const {username, email, password} = await req.body
-        console.log(username,password,email)
-        const checkUser = await User.findOne({email:email})
+        // console.log(username,password,email);
+        const checkUser = await User.findOne({email:email.toLowerCase()})
         if(checkUser){
             res.json({status:401,msg:"User already exist"})
         }else{
             const hashedPassword = await bcrypt.hash(password,10);
             const newUserCreated =  await User.create({
                 username,
-                email,
+                email:email.toLowerCase(),
                 password:hashedPassword,
                })
-               console.log(newUserCreated)
+            const newUserInMessagesCreated = await MessageUser.create({
+                username,
+                email:email.toLowerCase(),
+               })
+            //    console.log(newUserCreated)
             res.json({status:201,msg:"User created succesfully"})
         }
     }catch(err){
@@ -61,22 +68,23 @@ app.post('/signup',async(req,res)=>{
 })
 
 app.post('/add',middleware,async(req,res)=>{
-    const {todoArray} = req.body;
+    const {todoArray,email} = req.body;
     const userInfo = req.customData 
     const result = await User.updateOne({_id:userInfo._id},{$set:{todosArray:todoArray}})
-    console.log(result)
-    res.json({status:201,msg:"Todo add succesfully"})
+    const updatedArray = await User.findOne({email:email.toLowerCase()});
+    // console.log(result)
+    res.json({status:201,msg:"Todo add succesfully",todosArray:updatedArray.todosArray})
 })
 
 app.post("/getTodos",middleware,async(req,res)=>{
-    console.log('request arrived')
+    // console.log('request arrived')
     const userInfo = req.customData;
-    const todoArray = userInfo.todosArray  
-    console.log(todoArray)
-    res.json({todosArray:todoArray,status:200,ll:4343});
+    const todoArray = userInfo.todosArray
+    // console.log(todoArray)
+    res.json({todosArray:todoArray,status:200});
 })
 app.post("/deleteTodo",middleware,async(req,res)=>{
-    console.log('request arrived')
+    // console.log('request arrived')
     const {todoArray} = req.body;
     const userInfo = req.customData 
     const result = await User.updateOne({_id:userInfo._id},{$set:{todosArray:todoArray}})
@@ -87,17 +95,119 @@ app.post("/deleteTodo",middleware,async(req,res)=>{
     }
 })
 app.post("/updateTodo",middleware,async(req,res)=>{
-    console.log('request arrived')
-    const {todoArray} = req.body;
+    // console.log('request arrived')
+    const {todoArray,email} = req.body;
     const userInfo = req.customData 
     const result = await User.updateOne({_id:userInfo._id},{$set:{todosArray:todoArray}})
+    const updatedArray = await User.findOne({email:email.toLowerCase()});
     if(result.acknowledged){
-        res.json({msg:'Todo deleted succesfully',status:200});
+        res.json({msg:'Todo deleted succesfully',status:200,todosArray:updatedArray.todosArray});
     }else{
         res.json({msg:'Todo upgradation failed',status:401});
     }
 })
 
-app.listen(4500,()=>{
+const server = app.listen(4500,()=>{
     console.log("The server is running on 4500 port")
 }) 
+
+
+
+global.onlineUsers = new Map();
+global.onlineUsers2 = new Map();
+
+const io = socket(server, {
+    cors: {
+      origin: '*',
+    },
+    pingInterval: 2000,
+    pingTimeout: 5000,
+  });
+
+  io.on('connection', (socket) => {
+    console.log('user arrived')
+
+    socket.on('messageFromClient', (data) => {
+        // console.log('Data received from the client: ' , data);
+        onlineUsers.set(data, socket.id);
+        onlineUsers2.set(socket.id, data);
+        let connectedUsers = [];
+        onlineUsers.forEach((value, key) => {
+            if(data.email!==key.email){
+                connectedUsers.push(key)
+            }
+          });
+        socket.broadcast.emit("newUser",data)
+        // console.log(connectedUsers)
+        io.to(socket.id).emit('connectedUsersList',connectedUsers)
+    });
+
+    socket.on("selectUser",(user)=>{
+        console.log(user)
+        const requiredSocketID = onlineUsers.get(user);
+        console.log(requiredSocketID)
+        // socket.broadcast.emit("selectedUser",user)
+        onlineUsers.forEach((value, key) => {
+            if(user.email===key.email){
+                io.to(value).emit('selectedUser',user)
+                console.log(value)
+            }})
+    })
+
+    socket.on("RejectConnection",(data)=>{
+        console.log(data)
+        onlineUsers.forEach((value, key) => {
+            if(data.user.senderEmail===key.email){
+                console.log('done')
+                io.to(value).emit('RejectConnectionMsg',data.text)
+            }
+          });
+    })
+    
+    socket.on("initiatingVideoCall",(data)=>{
+        onlineUsers.forEach((value, key) => {
+            if(data.email===key.email){
+                io.to(value).emit('recievingVideoCall',data)
+            }
+          });
+    })
+
+    socket.on('rejectVideoCall',(data)=>{
+        // console.log(data)
+        onlineUsers.forEach((value, key) => {
+            if(data.user.senderEmail===key.email){
+                io.to(value).emit('recievingAnswerFromVideoCall',{...data,accepted:false})
+            }
+          });
+    })
+
+    socket.on('acceptedVideoCall',(data)=>{
+
+        onlineUsers.forEach((value, key) => {
+            if(data.user.senderEmail===key.email){
+                io.to(value).emit('recievingAnswerFromVideoCall',{...data,accepted:true})
+            }
+          });
+    })
+
+    socket.on('sendingPeerID',(data)=>{
+        console.log('dataa we are looking for',data)
+        onlineUsers.forEach((value, key) => {
+            if(data.email===key.email){
+                io.to(value).emit('recievingPeerId',data)
+            }
+          });
+    })
+
+
+
+    socket.on('disconnect', () => {
+        console.log('user disconnected')
+        const userToDelete = onlineUsers2.get(socket.id)
+        console.log(userToDelete)
+        socket.broadcast.emit("userDisconnected",userToDelete)
+        onlineUsers2.delete(socket.id);
+        onlineUsers.delete(userToDelete);
+      })
+  })
+
